@@ -91,28 +91,28 @@ cd frontend
 npm install axios lucide-react
 ```
 
-### Step 6: Create Component Files
+### File Structure
 
-Create the following folder structure and files:
+
 
 ```
 frontend/
 ├── app/
-│   ├── layout.tsx          (replace)
-│   ├── page.tsx            (replace)
-│   ├── globals.css         (replace)
+│   ├── layout.tsx          
+│   ├── page.tsx            
+│   ├── globals.css        
 │   ├── products/
-│   │   └── page.tsx        (create)
+│   │   └── page.tsx        
 │   ├── about/
-│   │   └── page.tsx        (create)
+│   │   └── page.tsx        
 │   └── contact/
-│       └── page.tsx        (create)
+│       └── page.tsx        
 ├── components/
-│   ├── Navbar.tsx          (create)
-│   ├── Hero.tsx            (create)
-│   ├── ProductCard.tsx     (create)
-│   └── Footer.tsx          (create)
-└── next.config.js          (replace)
+│   ├── Navbar.tsx          
+│   ├── Hero.tsx            
+│   ├── ProductCard.tsx     
+│   └── Footer.tsx         
+└── next.config.js         
 ```
 
 **Copy the code** from each artifact into the corresponding file:
