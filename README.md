@@ -273,8 +273,8 @@ This project is open source and available for educational purposes.
 ## 🤝 Support
 
 For issues or questions, please contact:
-- Email: info@rajascollection.com
-- Phone: +92 300 1234567
+- Email: umar.rajj616@gmail.com
+- Phone: +92 340 8852252
 
 ---
 
