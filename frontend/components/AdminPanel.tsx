@@ -91,16 +91,8 @@ export default function AdminPanel() {
     };
 
     const handleDelete = async (id: number) => {
-        if (window.confirm('Are you sure you want to delete this product?')) {
-            try {
-                await fetch(`${API_BASE}/products/${id}`, {
-                    method: 'DELETE',
-                });
-                fetchProducts();
-            } catch (error) {
-                setError('Failed to delete product');
-            }
-        }
+        // Deprecated: using promptDeleteProduct instead
+        promptDeleteProduct(id);
     };
 
     const handleEdit = (product: Product) => {
@@ -178,13 +170,58 @@ export default function AdminPanel() {
         }
     };
 
-    const handleDeleteOrder = async (id: number) => {
-        if (window.confirm('Are you sure you want to delete this order?')) {
+    const [showDeleteSuccess, setShowDeleteSuccess] = useState(false);
+    const [deleteSuccessMessage, setDeleteSuccessMessage] = useState('Order Deleted');
+
+    const [orderToDelete, setOrderToDelete] = useState<number | null>(null);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+    // Product Deletion State
+    const [productToDelete, setProductToDelete] = useState<number | null>(null);
+    const [showProductDeleteConfirm, setShowProductDeleteConfirm] = useState(false);
+
+    const promptDeleteProduct = (id: number) => {
+        setProductToDelete(id);
+        setShowProductDeleteConfirm(true);
+    };
+
+    const confirmDeleteProduct = async () => {
+        if (productToDelete) {
             try {
-                await fetch(`${API_BASE}/orders/${id}`, {
+                await fetch(`${API_BASE}/products/${productToDelete}`, {
+                    method: 'DELETE',
+                });
+                fetchProducts();
+                setShowProductDeleteConfirm(false);
+                setProductToDelete(null);
+                setDeleteSuccessMessage('Product Deleted');
+                setShowDeleteSuccess(true);
+                setTimeout(() => setShowDeleteSuccess(false), 3000);
+            } catch (error) {
+                setError('Failed to delete product');
+            }
+        }
+    };
+
+    const promptDeleteOrder = (id: number) => {
+        setOrderToDelete(id);
+        setShowDeleteConfirm(true);
+    };
+
+    const confirmDeleteOrder = async () => {
+        if (orderToDelete) {
+            try {
+                await fetch(`${API_BASE}/orders/${orderToDelete}`, {
                     method: 'DELETE',
                 });
                 fetchOrders();
+                setShowDeleteConfirm(false);
+                setOrderToDelete(null);
+                setShowDeleteConfirm(false);
+                setOrderToDelete(null);
+                setDeleteSuccessMessage('Order Deleted');
+                setShowDeleteSuccess(true);
+                setTimeout(() => setShowDeleteSuccess(false), 3000);
             } catch (error) {
                 setError('Failed to delete order');
             }
@@ -239,16 +276,80 @@ export default function AdminPanel() {
                             Login
                         </button>
                     </div>
-                    <p className="mt-4 text-sm text-gray-600 text-center">
-                        Default: admin / rj123
-                    </p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-gray-100">
+        <div className="min-h-screen bg-gray-100 relative">
+            {/* Delete Confirmation Modal */}
+            {showDeleteConfirm && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white rounded-2xl p-8 shadow-2xl flex flex-col items-center transform scale-100 transition-all max-w-sm w-full mx-4">
+                        <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                            <Trash2 className="w-8 h-8 text-red-600" />
+                        </div>
+                        <h3 className="text-2xl font-bold text-gray-900 mb-2 text-center">Delete Order?</h3>
+                        <p className="text-gray-500 text-center mb-6">Are you sure you want to delete this order? This action cannot be undone.</p>
+                        <div className="flex gap-4 w-full">
+                            <button
+                                onClick={() => setShowDeleteConfirm(false)}
+                                className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmDeleteOrder}
+                                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition"
+                            >
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Product Delete Confirmation Modal */}
+            {showProductDeleteConfirm && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white rounded-2xl p-8 shadow-2xl flex flex-col items-center transform scale-100 transition-all max-w-sm w-full mx-4">
+                        <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                            <Trash2 className="w-8 h-8 text-red-600" />
+                        </div>
+                        <h3 className="text-2xl font-bold text-gray-900 mb-2 text-center">Delete Product?</h3>
+                        <p className="text-gray-500 text-center mb-6">Are you sure you want to delete this product? This action cannot be undone.</p>
+                        <div className="flex gap-4 w-full">
+                            <button
+                                onClick={() => setShowProductDeleteConfirm(false)}
+                                className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmDeleteProduct}
+                                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition"
+                            >
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Delete Success Popup */}
+            {showDeleteSuccess && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white rounded-2xl p-8 shadow-2xl flex flex-col items-center transform scale-100 transition-all">
+                        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                            <Trash2 className="w-8 h-8 text-green-600" />
+                        </div>
+                        <h3 className="text-2xl font-bold text-gray-900 mb-2">{deleteSuccessMessage}</h3>
+                        <p className="text-gray-500 text-center">The item has been successfully removed from the system.</p>
+                    </div>
+                </div>
+            )}
+
             {/* Header */}
             <header className="bg-white shadow-md sticky top-0 z-40">
                 <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
@@ -522,8 +623,8 @@ export default function AdminPanel() {
                                                     value={order.status}
                                                     onChange={(e) => handleUpdateStatus(order.id, e.target.value)}
                                                     className={`px-2 py-1 text-xs font-medium rounded-full border-0 focus:ring-2 focus:ring-purple-500 cursor-pointer ${order.status === 'completed' ? 'bg-green-100 text-green-800' :
-                                                            order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                                                'bg-gray-100 text-gray-800'
+                                                        order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                                            'bg-gray-100 text-gray-800'
                                                         }`}
                                                 >
                                                     <option value="pending">Pending</option>
@@ -533,7 +634,7 @@ export default function AdminPanel() {
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                                 <button
-                                                    onClick={() => handleDeleteOrder(order.id)}
+                                                    onClick={() => promptDeleteOrder(order.id)}
                                                     className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-full transition-colors"
                                                     title="Delete Order"
                                                 >

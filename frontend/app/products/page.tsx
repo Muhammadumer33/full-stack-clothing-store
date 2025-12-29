@@ -21,14 +21,30 @@ interface Product {
 export default function ProductsPage() {
     const searchParams = useSearchParams()
     const categoryParam = searchParams.get('category')
+    const searchParam = searchParams.get('search') // Get search query
 
     const [products, setProducts] = useState<Product[]>([])
+    const [filteredProducts, setFilteredProducts] = useState<Product[]>([]) // Store filtered products
     const [loading, setLoading] = useState(true)
     const [selectedCategory, setSelectedCategory] = useState(categoryParam || 'all')
 
     useEffect(() => {
         fetchProducts(selectedCategory)
     }, [selectedCategory])
+
+    // Filter products when searchParam or products change
+    useEffect(() => {
+        if (searchParam) {
+            const lowerQuery = searchParam.toLowerCase()
+            const filtered = products.filter(p =>
+                p.name.toLowerCase().includes(lowerQuery) ||
+                p.description.toLowerCase().includes(lowerQuery)
+            )
+            setFilteredProducts(filtered)
+        } else {
+            setFilteredProducts(products)
+        }
+    }, [searchParam, products])
 
     const fetchProducts = async (category: string) => {
         setLoading(true)
@@ -47,22 +63,12 @@ export default function ProductsPage() {
 
     return (
         <div className="min-h-screen bg-gray-50">
-            {/* Header */}
-            <div className="bg-white shadow">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                    <h1 className="text-4xl font-bold text-gray-900">Our Products</h1>
-                    <p className="text-gray-600 mt-2">
-                        Discover our complete collection of premium ethnic wear
-                    </p>
-                </div>
-            </div>
-
             {/* Main Content */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="flex flex-col md:flex-row gap-8">
                     {/* Filters Sidebar */}
                     <aside className="w-full md:w-64 flex-shrink-0">
-                        <div className="bg-white rounded-lg shadow p-6">
+                        <div className="bg-white rounded-lg shadow p-6 sticky top-24">
                             <div className="flex items-center gap-2 mb-4">
                                 <Filter className="h-5 w-5 text-purple-600" />
                                 <h2 className="text-lg font-semibold">Filters</h2>
@@ -72,36 +78,36 @@ export default function ProductsPage() {
                                 <div>
                                     <h3 className="font-medium mb-3">Category</h3>
                                     <div className="space-y-2">
-                                        <label className="flex items-center">
+                                        <label className="flex items-center cursor-pointer hover:text-purple-600 transition-colors">
                                             <input
                                                 type="radio"
                                                 name="category"
                                                 value="all"
                                                 checked={selectedCategory === 'all'}
                                                 onChange={(e) => setSelectedCategory(e.target.value)}
-                                                className="mr-2 text-purple-600"
+                                                className="mr-2 text-purple-600 focus:ring-purple-500"
                                             />
                                             All Products
                                         </label>
-                                        <label className="flex items-center">
+                                        <label className="flex items-center cursor-pointer hover:text-purple-600 transition-colors">
                                             <input
                                                 type="radio"
                                                 name="category"
                                                 value="men"
                                                 checked={selectedCategory === 'men'}
                                                 onChange={(e) => setSelectedCategory(e.target.value)}
-                                                className="mr-2 text-purple-600"
+                                                className="mr-2 text-purple-600 focus:ring-purple-500"
                                             />
                                             Men's Collection
                                         </label>
-                                        <label className="flex items-center">
+                                        <label className="flex items-center cursor-pointer hover:text-purple-600 transition-colors">
                                             <input
                                                 type="radio"
                                                 name="category"
                                                 value="women"
                                                 checked={selectedCategory === 'women'}
                                                 onChange={(e) => setSelectedCategory(e.target.value)}
-                                                className="mr-2 text-purple-600"
+                                                className="mr-2 text-purple-600 focus:ring-purple-500"
                                             />
                                             Women's Collection
                                         </label>
@@ -120,11 +126,11 @@ export default function ProductsPage() {
                             </div>
                         ) : (
                             <>
-                                <div className="mb-6 text-gray-600">
-                                    Showing {products.length} products
+                                <div className="mb-6 text-gray-600 font-medium">
+                                    Showing {filteredProducts.length} products
                                 </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    {products.map((product) => (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+                                    {filteredProducts.map((product) => (
                                         <ProductCard key={product.id} product={product} />
                                     ))}
                                 </div>

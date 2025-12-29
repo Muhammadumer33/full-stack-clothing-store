@@ -40,6 +40,11 @@ export default function Footer() {
                                 </Link>
                             </li>
                             <li>
+                                <Link href="/wishlist" className="text-gray-400 hover:text-white transition">
+                                    Wishlist
+                                </Link>
+                            </li>
+                            <li>
                                 <Link href="/about" className="text-gray-400 hover:text-white transition">
                                     About Us
                                 </Link>
