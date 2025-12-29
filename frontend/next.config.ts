@@ -43,6 +43,14 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'www.noorangi.pk',
       },
+      {
+        protocol: 'https',
+        hostname: '1ststep.pk',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.shutterstock.com',
+      },
     ],
   },
 };

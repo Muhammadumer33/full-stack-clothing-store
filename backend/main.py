@@ -1,23 +1,71 @@
-from fastapi import FastAPI, HTTPException
+
+
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import List, Optional
-import json
+from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean, ARRAY
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker, Session
 import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 app = FastAPI(title="Raja's Collection API")
+
+# Database configuration
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:rj123@localhost:5432/rajas_collection")
+
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
+
+# Database Model
+class ProductDB(Base):
+    __tablename__ = "products"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    description = Column(String)
+    price = Column(Float, nullable=False)
+    category = Column(String, nullable=False)
+    image = Column(String)
+    sizes = Column(ARRAY(String))
+    colors = Column(ARRAY(String))
+    inStock = Column(Boolean, default=True)
+
+class OrderDB(Base):
+    __tablename__ = "orders"
+
+    id = Column(Integer, primary_key=True, index=True)
+    customer_name = Column(String, nullable=False)
+    phone = Column(String, nullable=False)
+    email = Column(String, nullable=False)
+    cnic = Column(String)
+    address = Column(String, nullable=False)
+    
+    product_id = Column(Integer, nullable=False)
+    product_name = Column(String, nullable=False)
+    quantity = Column(Integer, default=1)
+    total_price = Column(Float, nullable=False)
+    payment_method = Column(String, default="COD") # COD or Online
+    status = Column(String, default="pending")
+
+# Create tables
+Base.metadata.create_all(bind=engine)
 
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["http://localhost:3000", "http://localhost:5173"],  # Vite/React port
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Models
+# Pydantic Models
 class Product(BaseModel):
     id: int
     name: str
@@ -29,102 +77,50 @@ class Product(BaseModel):
     colors: List[str]
     inStock: bool
 
+    class Config:
+        from_attributes = True
+
+class ProductCreate(BaseModel):
+    name: str
+    description: str
+    price: float
+    category: str
+    image: str
+    sizes: List[str]
+    colors: List[str]
+    inStock: bool = True
+
+class OrderCreate(BaseModel):
+    customer_name: str
+    phone: str
+    email: str
+    cnic: str
+    address: str
+    product_id: int
+    product_name: str
+    quantity: int
+    total_price: float
+    payment_method: str
+
+class Order(OrderCreate):
+    id: int
+    status: str
+    
+    class Config:
+        from_attributes = True
+
 class ContactMessage(BaseModel):
     name: str
     email: str
     message: str
 
-# Sample product data
-PRODUCTS = [
-    {
-        "id": 1,
-        "name": "Premium Cotton Kurta",
-        "description": "Elegant handcrafted cotton kurta with intricate embroidery",
-        "price": 2499.00,
-        "category": "men",
-        "image": "https://s.alicdn.com/@sc04/kf/A6f2f93f1a303404992a4a090fbd6457bw/2025-Premium-Soft-Cotton-M-4XL-Size-Kurta-with-Beautiful-Foil-Printed-Design-and-Plain-White-Bottom-for-Men-Boys-for-Parties.jpg",
-        "sizes": ["S", "M", "L", "XL", "XXL"],
-        "colors": ["White", "Cream", "Blue"],
-        "inStock": True
-    },
-    {
-        "id": 2,
-        "name": "Designer Lehenga Set",
-        "description": "Royal designer lehenga with heavy work and dupatta",
-        "price": 8999.00,
-        "category": "women",
-        "image": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTpDHhd_aryujavrfYgeR8UeNG2I76AjNzF1Q&s",
-        "sizes": ["S", "M", "L", "XL"],
-        "colors": ["Red", "Pink", "Maroon", "Gold"],
-        "inStock": True
-    },
-    {
-        "id": 3,
-        "name": "Silk Saree Collection",
-        "description": "Pure silk saree with traditional border and pallu",
-        "price": 5499.00,
-        "category": "women",
-        "image": "https://khanboutique.pk/cdn/shop/files/WhatsAppImage2024-04-17at3.56.01PM.jpg?v=1713351601",
-        "sizes": ["Free Size"],
-        "colors": ["Green", "Purple", "Orange", "Red"],
-        "inStock": True
-    },
-    {
-        "id": 4,
-        "name": "Sherwani Set",
-        "description": "Luxurious sherwani with dupatta and churidar",
-        "price": 12999.00,
-        "category": "men",
-        "image": "https://wearzones.com/cdn/shop/files/Untitled_design_7_c8f73232-5470-4b20-8d41-e8aad055e35a.png?v=1751516582",
-        "sizes": ["S", "M", "L", "XL", "XXL"],
-        "colors": ["Ivory", "Gold", "Maroon"],
-        "inStock": True
-    },
-    {
-        "id": 5,
-        "name": "Anarkali Suit",
-        "description": "Beautiful anarkali suit with embroidered work",
-        "price": 3999.00,
-        "category": "women",
-        "image": "https://i.pinimg.com/236x/fc/fc/bf/fcfcbf530f6dd0df3b9e90005a0c8971.jpg",
-        "sizes": ["S", "M", "L", "XL"],
-        "colors": ["Pink", "Blue", "Green"],
-        "inStock": True
-    },
-    {
-        "id": 6,
-        "name": "Pathani Suit",
-        "description": "Comfortable pathani suit for daily wear",
-        "price": 1899.00,
-        "category": "men",
-        "image": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQeQHgC0mWyffPDRX9_k9J4bacr35_JVvU0Ug&s",
-        "sizes": ["S", "M", "L", "XL", "XXL"],
-        "colors": ["White", "Black", "Grey"],
-        "inStock": True
-    },
-    {
-        "id": 7,
-        "name": "Palazzo Suit Set",
-        "description": "Trendy palazzo suit with dupatta",
-        "price": 2799.00,
-        "category": "women",
-        "image": "https://clothsvilla.com/cdn/shop/files/red-tabby-organza-work-suit-set-with-plazo-dupatta_10_500x500.jpg?v=1750400314",
-        "sizes": ["S", "M", "L", "XL"],
-        "colors": ["Yellow", "Pink", "Mint"],
-        "inStock": True
-    },
-    {
-        "id": 8,
-        "name": "Nehru Jacket",
-        "description": "Stylish nehru jacket with button detailing",
-        "price": 3499.00,
-        "category": "men",
-        "image": "https://cdn.shopify.com/s/files/1/0862/9350/files/IvyGreenVelvetNehruJacket_df5cf9ad-1ad5-410e-9b2c-d61a354ee755_480x480.jpg?v=1638199838",
-        "sizes": ["S", "M", "L", "XL", "XXL"],
-        "colors": ["Navy", "Black", "Wine"],
-        "inStock": True
-    }
-]
+# Dependency
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 # Routes
 @app.get("/")
@@ -132,18 +128,84 @@ def read_root():
     return {"message": "Welcome to Raja's Collection API"}
 
 @app.get("/api/products", response_model=List[Product])
-def get_products(category: Optional[str] = None):
-    if category:
-        filtered = [p for p in PRODUCTS if p["category"] == category]
-        return filtered
-    return PRODUCTS
+def get_products(category: Optional[str] = None, db: Session = Depends(get_db)):
+    query = db.query(ProductDB)
+    if category and category != "all":
+        query = query.filter(ProductDB.category == category)
+    products = query.all()
+    return products
 
 @app.get("/api/products/{product_id}", response_model=Product)
-def get_product(product_id: int):
-    product = next((p for p in PRODUCTS if p["id"] == product_id), None)
+def get_product(product_id: int, db: Session = Depends(get_db)):
+    product = db.query(ProductDB).filter(ProductDB.id == product_id).first()
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     return product
+
+@app.post("/api/products", response_model=Product)
+def create_product(product: ProductCreate, db: Session = Depends(get_db)):
+    db_product = ProductDB(**product.dict())
+    db.add(db_product)
+    db.commit()
+    db.refresh(db_product)
+    return db_product
+
+@app.put("/api/products/{product_id}", response_model=Product)
+def update_product(product_id: int, product: ProductCreate, db: Session = Depends(get_db)):
+    db_product = db.query(ProductDB).filter(ProductDB.id == product_id).first()
+    if not db_product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    for key, value in product.dict().items():
+        setattr(db_product, key, value)
+    
+    db.commit()
+    db.refresh(db_product)
+    return db_product
+
+@app.delete("/api/products/{product_id}")
+def delete_product(product_id: int, db: Session = Depends(get_db)):
+    db_product = db.query(ProductDB).filter(ProductDB.id == product_id).first()
+    if not db_product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    db.delete(db_product)
+    db.commit()
+    return {"status": "success", "message": "Product deleted"}
+
+@app.post("/api/orders", response_model=Order)
+def create_order(order: OrderCreate, db: Session = Depends(get_db)):
+    db_order = OrderDB(**order.dict())
+    db.add(db_order)
+    db.commit()
+    db.refresh(db_order)
+    return db_order
+
+@app.get("/api/orders", response_model=List[Order])
+def get_orders(db: Session = Depends(get_db)):
+    return db.query(OrderDB).all()
+
+@app.delete("/api/orders/{order_id}")
+def delete_order(order_id: int, db: Session = Depends(get_db)):
+    order = db.query(OrderDB).filter(OrderDB.id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    db.delete(order)
+    db.commit()
+    return {"status": "success", "message": "Order deleted"}
+
+class OrderStatusUpdate(BaseModel):
+    status: str
+
+@app.put("/api/orders/{order_id}/status")
+def update_order_status(order_id: int, status_update: OrderStatusUpdate, db: Session = Depends(get_db)):
+    order = db.query(OrderDB).filter(OrderDB.id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    order.status = status_update.status
+    db.commit()
+    db.refresh(order)
+    return order
 
 @app.get("/api/categories")
 def get_categories():

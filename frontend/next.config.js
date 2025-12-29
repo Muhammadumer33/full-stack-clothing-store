@@ -61,6 +61,18 @@ const nextConfig = {
                 hostname: 'www.noorangi.pk',
                 port: '',
                 pathname: '/**',
+            },
+            {
+                protocol: 'https',
+                hostname: '1ststep.pk',
+                port: '',
+                pathname: '/**',
+            },
+            {
+                protocol: 'https',
+                hostname: 'www.shutterstock.com',
+                port: '',
+                pathname: '/**',
             }
         ],
     },

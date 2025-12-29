@@ -1,0 +1,560 @@
+import React, { useState, useEffect } from 'react';
+import { Trash2, Edit, Plus, Save, X, LogOut, Package, ShoppingBag } from 'lucide-react';
+
+interface Product {
+    id: number;
+    name: string;
+    description: string;
+    price: number;
+    category: string;
+    image: string;
+    sizes: string[];
+    colors: string[];
+    inStock: boolean;
+}
+
+interface Order {
+    id: number;
+    customer_name: string;
+    phone: string;
+    address: string;
+    product_name: string;
+    quantity: number;
+    total_price: number;
+    payment_method: string;
+    status: string;
+}
+
+export default function AdminPanel() {
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
+    const [activeTab, setActiveTab] = useState<'products' | 'orders'>('products');
+
+    // Products State
+    const [products, setProducts] = useState<Product[]>([]);
+    const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+    const [showAddForm, setShowAddForm] = useState(false);
+
+    // Orders State
+    const [orders, setOrders] = useState<Order[]>([]);
+
+    const [error, setError] = useState('');
+
+    // Admin credentials (in production, use proper authentication)
+    const ADMIN_USERNAME = 'admin';
+    const ADMIN_PASSWORD = 'rj123';
+
+    const API_BASE = 'http://localhost:8000/api';
+
+    useEffect(() => {
+        if (isLoggedIn) {
+            fetchProducts();
+            fetchOrders();
+        }
+    }, [isLoggedIn, activeTab]);
+
+    const fetchProducts = async () => {
+        try {
+            const response = await fetch(`${API_BASE}/products`);
+            const data = await response.json();
+            setProducts(data);
+        } catch (error) {
+            setError('Failed to fetch products');
+        }
+    };
+
+    const fetchOrders = async () => {
+        try {
+            const response = await fetch(`${API_BASE}/orders`);
+            const data = await response.json();
+            setOrders(data);
+        } catch (error) {
+            setError('Failed to fetch orders');
+        }
+    };
+
+    const handleLogin = (e: React.FormEvent | React.KeyboardEvent) => {
+        e.preventDefault();
+        if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+            setIsLoggedIn(true);
+            setError('');
+        } else {
+            setError('Invalid credentials');
+        }
+    };
+
+    const handleLogout = () => {
+        setIsLoggedIn(false);
+        setUsername('');
+        setPassword('');
+    };
+
+    const handleDelete = async (id: number) => {
+        if (window.confirm('Are you sure you want to delete this product?')) {
+            try {
+                await fetch(`${API_BASE}/products/${id}`, {
+                    method: 'DELETE',
+                });
+                fetchProducts();
+            } catch (error) {
+                setError('Failed to delete product');
+            }
+        }
+    };
+
+    const handleEdit = (product: Product) => {
+        setEditingProduct({ ...product });
+        setShowAddForm(false);
+    };
+
+    const handleSave = async () => {
+        if (!editingProduct) return;
+
+        try {
+            const url = showAddForm
+                ? `${API_BASE}/products`
+                : `${API_BASE}/products/${editingProduct.id}`;
+
+            const method = showAddForm ? 'POST' : 'PUT';
+
+            const price = parseFloat(editingProduct.price.toString());
+            if (isNaN(price)) {
+                throw new Error("Price must be a valid number");
+            }
+
+            const payload = {
+                name: editingProduct.name,
+                description: editingProduct.description || "",
+                price: price,
+                category: editingProduct.category,
+                image: editingProduct.image,
+                sizes: editingProduct.sizes,
+                colors: editingProduct.colors,
+                inStock: editingProduct.inStock,
+            };
+
+            console.log("Sending payload:", payload);
+
+            const response = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ detail: response.statusText }));
+                console.error("Backend error response:", errorData);
+                // Handle Pydantic validation errors (array of errors)
+                if (Array.isArray(errorData.detail)) {
+                    const messages = errorData.detail.map((err: any) => `${err.loc.join('.')} ${err.msg}`).join(', ');
+                    throw new Error(messages);
+                }
+                throw new Error(errorData.detail || `Request failed with status ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log("Save success:", data);
+
+            setEditingProduct(null);
+            setShowAddForm(false);
+            fetchProducts();
+        } catch (error: any) {
+            console.error("Save caught error:", error);
+            setError(error.message || 'Failed to save product');
+        }
+    };
+
+    const handleInputChange = (field: keyof Product, value: any) => {
+        if (editingProduct) {
+            setEditingProduct({ ...editingProduct, [field]: value });
+        }
+    };
+
+    const handleArrayInput = (field: 'sizes' | 'colors', value: string) => {
+        if (editingProduct) {
+            const array = value.split(',').map(item => item.trim());
+            setEditingProduct({ ...editingProduct, [field]: array });
+        }
+    };
+
+    const handleDeleteOrder = async (id: number) => {
+        if (window.confirm('Are you sure you want to delete this order?')) {
+            try {
+                await fetch(`${API_BASE}/orders/${id}`, {
+                    method: 'DELETE',
+                });
+                fetchOrders();
+            } catch (error) {
+                setError('Failed to delete order');
+            }
+        }
+    };
+
+    const handleUpdateStatus = async (id: number, newStatus: string) => {
+        try {
+            await fetch(`${API_BASE}/orders/${id}/status`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: newStatus }),
+            });
+            fetchOrders();
+        } catch (error) {
+            setError('Failed to update order status');
+        }
+    };
+
+    if (!isLoggedIn) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center p-4">
+                <div className="bg-white rounded-lg shadow-2xl p-8 w-full max-w-md">
+                    <h1 className="text-3xl font-bold text-gray-800 mb-6 text-center">Admin Login</h1>
+                    <div className="space-y-4">
+                        <div>
+                            <label className="block text-gray-700 font-medium mb-2">Username</label>
+                            <input
+                                type="text"
+                                value={username}
+                                onChange={(e) => setUsername(e.target.value)}
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                placeholder="Enter username"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-gray-700 font-medium mb-2">Password</label>
+                            <input
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                onKeyPress={(e) => e.key === 'Enter' && handleLogin(e)}
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                placeholder="Enter password"
+                            />
+                        </div>
+                        {error && <p className="text-red-500 text-sm">{error}</p>}
+                        <button
+                            onClick={handleLogin}
+                            className="w-full bg-purple-600 text-white py-3 rounded-lg font-semibold hover:bg-purple-700 transition"
+                        >
+                            Login
+                        </button>
+                    </div>
+                    <p className="mt-4 text-sm text-gray-600 text-center">
+                        Default: admin / rj123
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="min-h-screen bg-gray-100">
+            {/* Header */}
+            <header className="bg-white shadow-md sticky top-0 z-40">
+                <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+                    <div className="flex items-center gap-8">
+                        <h1 className="text-2xl font-bold text-gray-800">Raja's Collection</h1>
+                        <nav className="flex gap-1 bg-gray-100 p-1 rounded-lg">
+                            <button
+                                onClick={() => setActiveTab('products')}
+                                className={`px-4 py-2 rounded-md font-medium text-sm transition-all flex items-center gap-2 ${activeTab === 'products' ? 'bg-white shadow text-purple-600' : 'text-gray-600 hover:text-gray-900'
+                                    }`}
+                            >
+                                <Package size={18} />
+                                Products
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('orders')}
+                                className={`px-4 py-2 rounded-md font-medium text-sm transition-all flex items-center gap-2 ${activeTab === 'orders' ? 'bg-white shadow text-purple-600' : 'text-gray-600 hover:text-gray-900'
+                                    }`}
+                            >
+                                <ShoppingBag size={18} />
+                                Orders
+                            </button>
+                        </nav>
+                    </div>
+                    <div className="flex gap-4">
+                        {activeTab === 'products' && (
+                            <button
+                                onClick={() => {
+                                    setShowAddForm(true);
+                                    setEditingProduct({
+                                        id: 0, // Placeholder ID for new product
+                                        name: '',
+                                        description: '',
+                                        price: 0,
+                                        category: 'men',
+                                        image: '',
+                                        sizes: [],
+                                        colors: [],
+                                        inStock: true,
+                                    });
+                                }}
+                                className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-700 transition"
+                            >
+                                <Plus size={20} />
+                                Add Product
+                            </button>
+                        )}
+                        <button
+                            onClick={handleLogout}
+                            className="bg-red-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-red-700 transition"
+                        >
+                            <LogOut size={20} />
+                            Logout
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <div className="max-w-7xl mx-auto px-4 py-8">
+                {error && (
+                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                        {error}
+                    </div>
+                )}
+
+                {activeTab === 'products' ? (
+                    <>
+                        {/* Edit/Add Form */}
+                        {(editingProduct || showAddForm) && (
+                            <div className="bg-white rounded-lg shadow-lg p-6 mb-8 border border-purple-100">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h2 className="text-2xl font-bold">
+                                        {showAddForm ? 'Add New Product' : 'Edit Product'}
+                                    </h2>
+                                    <button
+                                        onClick={() => {
+                                            setEditingProduct(null);
+                                            setShowAddForm(false);
+                                        }}
+                                        className="text-gray-500 hover:text-gray-700"
+                                    >
+                                        <X size={24} />
+                                    </button>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-gray-700 font-medium mb-2">Product Name</label>
+                                        <input
+                                            type="text"
+                                            value={editingProduct!.name}
+                                            onChange={(e) => handleInputChange('name', e.target.value)}
+                                            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-gray-700 font-medium mb-2">Price (PKR)</label>
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            value={editingProduct!.price}
+                                            onChange={(e) => handleInputChange('price', e.target.value)}
+                                            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-gray-700 font-medium mb-2">Category</label>
+                                        <select
+                                            value={editingProduct!.category}
+                                            onChange={(e) => handleInputChange('category', e.target.value)}
+                                            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                                        >
+                                            <option value="men">Men</option>
+                                            <option value="women">Women</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-gray-700 font-medium mb-2">Image URL</label>
+                                        <input
+                                            type="url"
+                                            value={editingProduct!.image}
+                                            onChange={(e) => handleInputChange('image', e.target.value)}
+                                            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-gray-700 font-medium mb-2">Sizes (comma separated)</label>
+                                        <input
+                                            type="text"
+                                            value={editingProduct!.sizes?.join(', ')}
+                                            onChange={(e) => handleArrayInput('sizes', e.target.value)}
+                                            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                                            placeholder="S, M, L, XL"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-gray-700 font-medium mb-2">Colors (comma separated)</label>
+                                        <input
+                                            type="text"
+                                            value={editingProduct!.colors?.join(', ')}
+                                            onChange={(e) => handleArrayInput('colors', e.target.value)}
+                                            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                                            placeholder="Red, Blue, Green"
+                                        />
+                                    </div>
+                                    <div className="md:col-span-2">
+                                        <label className="block text-gray-700 font-medium mb-2">Description</label>
+                                        <textarea
+                                            value={editingProduct!.description}
+                                            onChange={(e) => handleInputChange('description', e.target.value)}
+                                            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                                            rows={3}
+                                        />
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="checkbox"
+                                            checked={editingProduct!.inStock}
+                                            onChange={(e) => handleInputChange('inStock', e.target.checked)}
+                                            className="w-4 h-4"
+                                        />
+                                        <label className="text-gray-700 font-medium">In Stock</label>
+                                    </div>
+                                    <div className="md:col-span-2">
+                                        <button
+                                            onClick={handleSave}
+                                            className="bg-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-700 transition flex items-center gap-2"
+                                        >
+                                            <Save size={20} />
+                                            {showAddForm ? 'Add Product' : 'Update Product'}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Products Table */}
+                        <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-100">
+                            <div className="overflow-x-auto">
+                                <table className="w-full">
+                                    <thead className="bg-gray-50 border-b">
+                                        <tr>
+                                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">ID</th>
+                                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Image</th>
+                                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Name</th>
+                                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Category</th>
+                                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Price</th>
+                                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Stock</th>
+                                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="bg-white divide-y divide-gray-200">
+                                        {products.map((product) => (
+                                            <tr key={product.id} className="hover:bg-gray-50 transition-colors">
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">#{product.id}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <img src={product.image} alt={product.name} className="w-12 h-12 object-cover rounded-lg border border-gray-200" />
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{product.name}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">{product.category}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">PKR {product.price.toLocaleString()}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${product.inStock ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                                        {product.inStock ? 'In Stock' : 'Out of Stock'}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                    <div className="flex gap-3">
+                                                        <button
+                                                            onClick={() => handleEdit(product)}
+                                                            className="text-blue-600 hover:text-blue-900 transition-colors"
+                                                            title="Edit"
+                                                        >
+                                                            <Edit size={18} />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDelete(product.id)}
+                                                            className="text-red-600 hover:text-red-900 transition-colors"
+                                                            title="Delete"
+                                                        >
+                                                            <Trash2 size={18} />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </>
+                ) : (
+                    /* Orders Table */
+                    <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-100">
+                        <div className="overflow-x-auto">
+                            <table className="w-full">
+                                <thead className="bg-gray-50 border-b">
+                                    <tr>
+                                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Order ID</th>
+                                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Customer</th>
+                                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Address</th>
+                                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Item</th>
+                                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Qty</th>
+                                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Total</th>
+                                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Payment</th>
+                                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-200">
+                                    {orders.map((order) => (
+                                        <tr key={order.id} className="hover:bg-gray-50 transition-colors">
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">#{order.id}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="text-sm font-medium text-gray-900">{order.customer_name}</div>
+                                                <div className="text-sm text-gray-500">{order.phone}</div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-normal min-w-[200px]">
+                                                <div className="text-sm text-gray-600 leading-snug">{order.address}</div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{order.product_name}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.quantity}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">PKR {order.total_price.toLocaleString()}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <span className={`px-2 py-1 text-xs font-medium rounded-full ${order.payment_method === 'Online' ? 'bg-blue-100 text-blue-800' : 'bg-orange-100 text-orange-800'
+                                                    }`}>
+                                                    {order.payment_method}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <select
+                                                    value={order.status}
+                                                    onChange={(e) => handleUpdateStatus(order.id, e.target.value)}
+                                                    className={`px-2 py-1 text-xs font-medium rounded-full border-0 focus:ring-2 focus:ring-purple-500 cursor-pointer ${order.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                                            order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                                                'bg-gray-100 text-gray-800'
+                                                        }`}
+                                                >
+                                                    <option value="pending">Pending</option>
+                                                    <option value="completed">Completed</option>
+                                                    <option value="cancelled">Cancelled</option>
+                                                </select>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                <button
+                                                    onClick={() => handleDeleteOrder(order.id)}
+                                                    className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-full transition-colors"
+                                                    title="Delete Order"
+                                                >
+                                                    <Trash2 size={18} />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    {orders.length === 0 && (
+                                        <tr>
+                                            <td colSpan={9} className="px-6 py-12 text-center text-gray-500">
+                                                No orders received yet.
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
