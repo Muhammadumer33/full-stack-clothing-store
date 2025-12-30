@@ -91,7 +91,7 @@ export default function Footer() {
                             <li className="flex items-start space-x-3">
                                 <MapPin className="h-5 w-5 text-purple-400 mt-1" />
                                 <span className="text-gray-400">
-                                    123 Fashion Street, Rawalpindi, Punjab, Pakistan
+                                    Giga Mall, DHA Phase 2, GT Road, Islamabad, Pakistan
                                 </span>
                             </li>
                             <li className="flex items-center space-x-3">

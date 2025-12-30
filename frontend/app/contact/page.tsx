@@ -70,8 +70,8 @@ export default function ContactPage() {
                                         Visit Our Store
                                     </h3>
                                     <p className="text-gray-600">
-                                        123 Fashion Street, Commercial Area<br />
-                                        Rawalpindi, Punjab, Pakistan
+                                        Giga Mall, DHA Phase 2, GT Road<br />
+                                        Islamabad, Pakistan
                                     </p>
                                 </div>
                             </div>
@@ -113,9 +113,19 @@ export default function ContactPage() {
                             </div>
                         </div>
 
-                        {/* Map Placeholder */}
-                        <div className="mt-8 bg-gray-200 rounded-lg h-64 flex items-center justify-center">
-                            <p className="text-gray-500">Map Integration Placeholder</p>
+                        {/* Map Integration */}
+                        <div className="mt-8 bg-gray-200 rounded-lg h-64 overflow-hidden">
+                            <iframe
+                                title="Giga Mall Location"
+                                width="100%"
+                                height="100%"
+                                id="gmap_canvas"
+                                src="https://maps.google.com/maps?q=Giga%20Mall%20DHA%20Phase%202,%20Islamabad&t=&z=15&ie=UTF8&iwloc=&output=embed"
+                                frameBorder="0"
+                                scrolling="no"
+                                marginHeight={0}
+                                marginWidth={0}
+                            />
                         </div>
                     </div>
 

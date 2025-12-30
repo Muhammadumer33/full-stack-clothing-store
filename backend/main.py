@@ -1,7 +1,8 @@
 
 
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
+from email_service import send_order_email, send_contact_email
 from pydantic import BaseModel
 from typing import List, Optional
 from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean, ARRAY
@@ -174,11 +175,29 @@ def delete_product(product_id: int, db: Session = Depends(get_db)):
     return {"status": "success", "message": "Product deleted"}
 
 @app.post("/api/orders", response_model=Order)
-def create_order(order: OrderCreate, db: Session = Depends(get_db)):
+def create_order(order: OrderCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     db_order = OrderDB(**order.dict())
     db.add(db_order)
     db.commit()
     db.refresh(db_order)
+    
+    # Convert SQLAlchemy model to dict for the email function
+    order_dict = {
+        "id": db_order.id,
+        "customer_name": db_order.customer_name,
+        "phone": db_order.phone,
+        "email": db_order.email,
+        "address": db_order.address,
+        "product_id": db_order.product_id,
+        "product_name": db_order.product_name,
+        "quantity": db_order.quantity,
+        "total_price": db_order.total_price,
+        "payment_method": db_order.payment_method,
+        "status": db_order.status
+    }
+    
+    background_tasks.add_task(send_order_email, order_dict)
+    
     return db_order
 
 @app.get("/api/orders", response_model=List[Order])
@@ -218,9 +237,15 @@ def get_categories():
     }
 
 @app.post("/api/contact")
-def submit_contact(message: ContactMessage):
-    # In production, save to database or send email
-    print(f"Contact message from {message.name}: {message.message}")
+def submit_contact(message: ContactMessage, background_tasks: BackgroundTasks):
+    # Send email in background
+    contact_dict = {
+        "name": message.name,
+        "email": message.email,
+        "message": message.message
+    }
+    background_tasks.add_task(send_contact_email, contact_dict)
+    
     return {"status": "success", "message": "Thank you for contacting us!"}
 
 if __name__ == "__main__":
