@@ -13,7 +13,7 @@ export default function Hero() {
             <div className="relative px-4 sm:px-6 lg:px-8 py-24 md:py-32 z-10 max-w-7xl mx-auto">
                 <div className="text-center max-w-4xl mx-auto">
                     <span className="inline-block py-1 px-3 rounded-full bg-purple-100 text-purple-700 text-sm font-semibold tracking-wide mb-6">
-                        New Collection 2024
+                        New Collection 2026
                     </span>
                     <h1 className="text-5xl md:text-7xl font-serif font-bold text-gray-900 mb-8 leading-tight">
                         Redefining <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">Elegance</span> <br />

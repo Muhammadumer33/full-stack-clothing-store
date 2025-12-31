@@ -1,5 +1,6 @@
 import Link from 'next/link'
-import { Facebook, Instagram, Twitter, Mail, Phone, MapPin } from 'lucide-react'
+import Image from 'next/image'
+import { Facebook, Instagram, Linkedin, Mail, Phone, MapPin } from 'lucide-react'
 
 export default function Footer() {
     return (
@@ -8,19 +9,27 @@ export default function Footer() {
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
                     {/* Brand */}
                     <div>
-                        <h3 className="text-2xl font-bold mb-4">Raja's Collection</h3>
+                        <Link href="/" className="inline-block mb-4">
+                            <Image
+                                src="/footer.png"
+                                alt="Raja's Collection Logo"
+                                width={200}
+                                height={70}
+                                className="h-16 w-auto object-contain"
+                            />
+                        </Link>
                         <p className="text-gray-400 mb-4">
                             Your trusted destination for premium ethnic wear and traditional clothing.
                         </p>
                         <div className="flex space-x-4">
-                            <a href="#" className="text-gray-400 hover:text-white transition">
+                            <a href="https://www.facebook.com/raj.umar.184007/" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition">
                                 <Facebook className="h-5 w-5" />
                             </a>
-                            <a href="#" className="text-gray-400 hover:text-white transition">
+                            <a href="https://www.instagram.com/raja___umarr/" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition">
                                 <Instagram className="h-5 w-5" />
                             </a>
-                            <a href="#" className="text-gray-400 hover:text-white transition">
-                                <Twitter className="h-5 w-5" />
+                            <a href="https://www.linkedin.com/in/muhammad-umer-9000942a2/" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition">
+                                <Linkedin className="h-5 w-5" />
                             </a>
                         </div>
                     </div>
@@ -108,7 +117,7 @@ export default function Footer() {
 
                 <div className="border-t border-gray-800 mt-8 pt-8 text-center">
                     <p className="text-gray-400">
-                        © 2025 Raja's Collection. All rights reserved.
+                        © 2026 Raja's Collection. All rights reserved.
                     </p>
                 </div>
             </div>

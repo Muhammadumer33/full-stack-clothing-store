@@ -7,8 +7,11 @@ import Footer from '@/components/Footer'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: "Raja's Collection - Premium Ethnic Wear",
+  title: "Raja's Collection",
   description: 'Discover premium ethnic wear and traditional clothing for men and women',
+  icons: {
+    icon: '/logo.png',
+  },
 }
 
 export default function RootLayout({

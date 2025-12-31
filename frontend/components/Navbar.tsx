@@ -104,11 +104,17 @@ export default function Navbar() {
     return (
         <nav className="bg-white shadow-md sticky top-0 z-50">
             <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between items-center h-16 gap-8">
+                <div className="flex justify-between items-center h-24 gap-8">
                     {/* Logo */}
-                    <Link href="/" className="flex items-center space-x-2 flex-shrink-0">
-                        <ShoppingBag className="h-8 w-8 text-purple-600" />
-                        <span className="text-2xl font-bold text-gray-900">Raja's Collection</span>
+                    <Link href="/" className="flex items-center space-x-2 flex-shrink-0 py-1">
+                        <Image
+                            src="/logo.png"
+                            alt="Raja's Collection Logo"
+                            width={220}
+                            height={70}
+                            className="h-20 w-auto object-contain"
+                            priority
+                        />
                     </Link>
 
                     {/* Search Bar Container */}
