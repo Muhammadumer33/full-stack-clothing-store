@@ -4,6 +4,10 @@ A complete clothing brand website built with FastAPI (Backend) and Next.js (Fron
 
 ## 🚀 Quick Start Guide
 
+
+https://github.com/user-attachments/assets/48d97b4b-5c61-4267-bf72-9ba97024f8e2
+
+
 ### Prerequisites
 - Python 3.8+
 - Node.js 18+
