@@ -2,7 +2,7 @@
 
 A complete clothing brand website built with FastAPI (Backend) and Next.js (Frontend).
 
-## Video Demo
+## 🎥 Video Demo
 https://github.com/user-attachments/assets/bbadf11a-226e-4398-8fe7-b02dd213175c
 
 
