@@ -16,8 +16,7 @@ load_dotenv()
 
 app = FastAPI(title="Raja's Collection API")
 
-# Database configuration
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:rj123@localhost:5432/rajas_collection")
+DATABASE_URL = os.environ["DATABASE_URL"]
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
