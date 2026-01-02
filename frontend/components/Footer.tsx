@@ -80,16 +80,6 @@ export default function Footer() {
                                     Women's Collection
                                 </Link>
                             </li>
-                            <li>
-                                <a href="#" className="text-gray-400 hover:text-white transition">
-                                    New Arrivals
-                                </a>
-                            </li>
-                            <li>
-                                <a href="#" className="text-gray-400 hover:text-white transition">
-                                    Best Sellers
-                                </a>
-                            </li>
                         </ul>
                     </div>
 

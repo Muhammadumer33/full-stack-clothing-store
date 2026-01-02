@@ -5,9 +5,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from email_service import send_order_email, send_contact_email
 from pydantic import BaseModel
 from typing import List, Optional
-from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean, ARRAY
+from datetime import datetime
+from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean, ARRAY, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.sql import func
 import os
 from dotenv import load_dotenv
 
@@ -52,6 +54,8 @@ class OrderDB(Base):
     total_price = Column(Float, nullable=False)
     payment_method = Column(String, default="COD") # COD or Online
     status = Column(String, default="pending")
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    completed_at = Column(DateTime(timezone=True), nullable=True)
 
 # Create tables
 Base.metadata.create_all(bind=engine)
@@ -220,10 +224,63 @@ def update_order_status(order_id: int, status_update: OrderStatusUpdate, db: Ses
     order = db.query(OrderDB).filter(OrderDB.id == order_id).first()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
+    
+    if status_update.status == "completed" and order.status != "completed":
+        order.completed_at = func.now()
+    elif status_update.status != "completed":
+        order.completed_at = None
+        
     order.status = status_update.status
     db.commit()
     db.refresh(order)
     return order
+
+@app.get("/api/admin/stats")
+def get_admin_stats(db: Session = Depends(get_db)):
+    from datetime import date, timedelta
+    import calendar
+    
+    today = date.today()
+    # Start of today
+    start_of_today = datetime.combine(today, datetime.min.time())
+    
+    # Start of this week (Monday)
+    # today.weekday() returns 0 for Monday, 6 for Sunday
+    days_since_monday = today.weekday()
+    start_of_week = datetime.combine(today - timedelta(days=days_since_monday), datetime.min.time())
+    
+    # Start of this month
+    start_of_month = datetime.combine(today.replace(day=1), datetime.min.time())
+    
+    stats = {
+        "completed_today": db.query(OrderDB).filter(
+            OrderDB.status == "completed",
+            OrderDB.completed_at >= start_of_today
+        ).count(),
+        "completed_this_week": db.query(OrderDB).filter(
+            OrderDB.status == "completed",
+            OrderDB.completed_at >= start_of_week
+        ).count(),
+        "completed_this_month": db.query(OrderDB).filter(
+            OrderDB.status == "completed",
+            OrderDB.completed_at >= start_of_month
+        ).count(),
+        "sales_today": db.query(func.sum(OrderDB.total_price)).filter(
+            OrderDB.status == "completed",
+            OrderDB.completed_at >= start_of_today
+        ).scalar() or 0,
+        "sales_this_week": db.query(func.sum(OrderDB.total_price)).filter(
+            OrderDB.status == "completed",
+            OrderDB.completed_at >= start_of_week
+        ).scalar() or 0,
+        "sales_this_month": db.query(func.sum(OrderDB.total_price)).filter(
+            OrderDB.status == "completed",
+            OrderDB.completed_at >= start_of_month
+        ).scalar() or 0,
+        "total_orders": db.query(OrderDB).count(),
+        "pending_orders": db.query(OrderDB).filter(OrderDB.status == "pending").count()
+    }
+    return stats
 
 @app.get("/api/categories")
 def get_categories():

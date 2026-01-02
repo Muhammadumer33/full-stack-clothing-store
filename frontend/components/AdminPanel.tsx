@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Trash2, Edit, Plus, Save, X, LogOut, Package, ShoppingBag } from 'lucide-react';
+import { Trash2, Edit, Plus, Save, X, LogOut, Package, ShoppingBag, CheckCircle, Calendar, TrendingUp, BarChart3, Clock } from 'lucide-react';
 
 interface Product {
     id: number;
@@ -38,6 +38,16 @@ export default function AdminPanel() {
 
     // Orders State
     const [orders, setOrders] = useState<Order[]>([]);
+    const [stats, setStats] = useState({
+        completed_today: 0,
+        completed_this_week: 0,
+        completed_this_month: 0,
+        sales_today: 0,
+        sales_this_week: 0,
+        sales_this_month: 0,
+        total_orders: 0,
+        pending_orders: 0
+    });
 
     const [error, setError] = useState('');
 
@@ -51,8 +61,19 @@ export default function AdminPanel() {
         if (isLoggedIn) {
             fetchProducts();
             fetchOrders();
+            fetchStats();
         }
     }, [isLoggedIn, activeTab]);
+
+    const fetchStats = async () => {
+        try {
+            const response = await fetch(`${API_BASE}/admin/stats`);
+            const data = await response.json();
+            setStats(data);
+        } catch (error) {
+            console.error('Failed to fetch stats:', error);
+        }
+    };
 
     const fetchProducts = async () => {
         try {
@@ -236,6 +257,7 @@ export default function AdminPanel() {
                 body: JSON.stringify({ status: newStatus }),
             });
             fetchOrders();
+            fetchStats();
         } catch (error) {
             setError('Failed to update order status');
         }
@@ -414,6 +436,85 @@ export default function AdminPanel() {
                         {error}
                     </div>
                 )}
+
+                {/* Statistics Dashboard */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    {/* Completion Stats */}
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow">
+                        <div className="p-3 bg-green-50 rounded-xl">
+                            <CheckCircle className="text-green-600" size={28} />
+                        </div>
+                        <div>
+                            <p className="text-sm text-gray-400 font-medium">Completed Today ✅</p>
+                            <h3 className="text-2xl font-bold text-gray-800">{stats.completed_today}</h3>
+                        </div>
+                    </div>
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow">
+                        <div className="p-3 bg-blue-50 rounded-xl">
+                            <Calendar className="text-blue-600" size={28} />
+                        </div>
+                        <div>
+                            <p className="text-sm text-gray-400 font-medium">This Week</p>
+                            <h3 className="text-2xl font-bold text-gray-800">{stats.completed_this_week}</h3>
+                        </div>
+                    </div>
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow">
+                        <div className="p-3 bg-purple-50 rounded-xl">
+                            <TrendingUp className="text-purple-600" size={28} />
+                        </div>
+                        <div>
+                            <p className="text-sm text-gray-400 font-medium">This Month</p>
+                            <h3 className="text-2xl font-bold text-gray-800">{stats.completed_this_month}</h3>
+                        </div>
+                    </div>
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow">
+                        <div className="p-3 bg-yellow-50 rounded-xl">
+                            <Clock className="text-yellow-600" size={28} />
+                        </div>
+                        <div>
+                            <p className="text-sm text-gray-400 font-medium">Pending Orders</p>
+                            <h3 className="text-2xl font-bold text-gray-800">{stats.pending_orders}</h3>
+                        </div>
+                    </div>
+
+                    {/* Sales Stats */}
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow">
+                        <div className="p-3 bg-emerald-50 rounded-xl">
+                            <ShoppingBag className="text-emerald-600" size={28} />
+                        </div>
+                        <div>
+                            <p className="text-sm text-gray-400 font-medium">Today Sales</p>
+                            <h3 className="text-2xl font-bold text-gray-800">PKR {stats.sales_today?.toLocaleString() || 0}</h3>
+                        </div>
+                    </div>
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow">
+                        <div className="p-3 bg-emerald-50 rounded-xl">
+                            <BarChart3 className="text-emerald-600" size={28} />
+                        </div>
+                        <div>
+                            <p className="text-sm text-gray-400 font-medium">Weekly Sales</p>
+                            <h3 className="text-2xl font-bold text-gray-800">PKR {stats.sales_this_week?.toLocaleString() || 0}</h3>
+                        </div>
+                    </div>
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow">
+                        <div className="p-3 bg-emerald-50 rounded-xl">
+                            <BarChart3 className="text-emerald-600" size={28} />
+                        </div>
+                        <div>
+                            <p className="text-sm text-gray-400 font-medium">Monthly Sales</p>
+                            <h3 className="text-2xl font-bold text-gray-800">PKR {stats.sales_this_month?.toLocaleString() || 0}</h3>
+                        </div>
+                    </div>
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow">
+                        <div className="p-3 bg-gray-50 rounded-xl">
+                            <Package className="text-gray-600" size={28} />
+                        </div>
+                        <div>
+                            <p className="text-sm text-gray-400 font-medium">Total Orders</p>
+                            <h3 className="text-2xl font-bold text-gray-800">{stats.total_orders}</h3>
+                        </div>
+                    </div>
+                </div>
 
                 {activeTab === 'products' ? (
                     <>

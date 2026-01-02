@@ -20,3 +20,4 @@ backend/db.sqlite3
 # Agent
 .gemini/
 .agent/
+database_backup.dump
