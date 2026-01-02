@@ -13,6 +13,8 @@ interface OrderModalProps {
     onClose: () => void;
 }
 
+import { orderService } from '@/services/orderService';
+
 export default function OrderModal({ product, onClose }: OrderModalProps) {
     const [quantity, setQuantity] = useState(1);
     const [formData, setFormData] = useState({
@@ -35,25 +37,18 @@ export default function OrderModal({ product, onClose }: OrderModalProps) {
         setError('');
 
         try {
-            const response = await fetch('http://localhost:8000/api/orders', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    ...formData,
-                    product_id: product.id,
-                    product_name: product.name,
-                    quantity,
-                    total_price: total
-                }),
+            const data = await orderService.createOrder({
+                customer_name: formData.customer_name,
+                customer_email: formData.email,
+                customer_phone: formData.phone,
+                customer_address: formData.address,
+                product_name: product.name,
+                product_image: product.image,
+                quantity,
+                total_price: total,
+                payment_method: formData.payment_method
             });
 
-            if (!response.ok) {
-                throw new Error('Failed to place order');
-            }
-
-            const data = await response.json();
             setOrderSuccess(data);
         } catch (err) {
             setError('Something went wrong. Please try again.');
@@ -61,6 +56,7 @@ export default function OrderModal({ product, onClose }: OrderModalProps) {
             setIsSubmitting(false);
         }
     };
+
 
     if (orderSuccess) {
         return (

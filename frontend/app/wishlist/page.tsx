@@ -3,20 +3,8 @@
 import { useState, useEffect } from 'react'
 import ProductCard from '@/components/ProductCard'
 import { Heart } from 'lucide-react'
-import axios from 'axios'
+import { productService, Product } from '@/services/productService'
 import Link from 'next/link'
-
-interface Product {
-    id: number
-    name: string
-    description: string
-    price: number
-    category: string
-    image: string
-    sizes: string[]
-    colors: string[]
-    inStock: boolean
-}
 
 export default function Wishlist() {
     const [products, setProducts] = useState<Product[]>([])
@@ -31,14 +19,15 @@ export default function Wishlist() {
         // Fetch all products
         const fetchProducts = async () => {
             try {
-                const response = await axios.get('http://localhost:8000/api/products')
-                setProducts(response.data)
+                const data = await productService.getAllProducts()
+                setProducts(data)
             } catch (error) {
                 console.error('Error fetching products:', error)
             } finally {
                 setLoading(false)
             }
         }
+
 
         fetchProducts()
     }, [])

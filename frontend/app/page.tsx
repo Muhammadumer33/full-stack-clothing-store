@@ -5,19 +5,7 @@ import Hero from '@/components/Hero'
 import ProductCard from '@/components/ProductCard'
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
-import axios from 'axios'
-
-interface Product {
-    id: number
-    name: string
-    description: string
-    price: number
-    category: string
-    image: string
-    sizes: string[]
-    colors: string[]
-    inStock: boolean
-}
+import { productService, Product } from '@/services/productService'
 
 export default function Home() {
     const [products, setProducts] = useState<Product[]>([])
@@ -26,14 +14,15 @@ export default function Home() {
     useEffect(() => {
         const fetchProducts = async () => {
             try {
-                const response = await axios.get('http://localhost:8000/api/products')
-                setProducts(response.data.slice(0, 6)) // Show only 6 products on home
+                const data = await productService.getAllProducts()
+                setProducts(data.slice(0, 6)) // Show only 6 products on home
             } catch (error) {
                 console.error('Error fetching products:', error)
             } finally {
                 setLoading(false)
             }
         }
+
 
         fetchProducts()
     }, [])

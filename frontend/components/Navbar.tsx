@@ -4,16 +4,8 @@ import Link from 'next/link'
 import { useState, useEffect, useRef } from 'react'
 import { Menu, X, ShoppingBag, Search } from 'lucide-react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
-import axios from 'axios'
+import { productService, Product } from '@/services/productService'
 import Image from 'next/image'
-
-interface Product {
-    id: number
-    name: string
-    image: string
-    category: string
-    price: number
-}
 
 export default function Navbar() {
     const [isOpen, setIsOpen] = useState(false)
@@ -31,8 +23,8 @@ export default function Navbar() {
     useEffect(() => {
         const fetchProducts = async () => {
             try {
-                const response = await axios.get('http://localhost:8000/api/products')
-                setAllProducts(response.data)
+                const data = await productService.getAllProducts()
+                setAllProducts(data)
             } catch (error) {
                 console.error('Error fetching products for search:', error)
             }

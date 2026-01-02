@@ -4,21 +4,11 @@ import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import ProductCard from '@/components/ProductCard'
 import { Filter } from 'lucide-react'
-import axios from 'axios'
+import { productService, Product } from '@/services/productService'
 
-interface Product {
-    id: number
-    name: string
-    description: string
-    price: number
-    category: string
-    image: string
-    sizes: string[]
-    colors: string[]
-    inStock: boolean
-}
+import { Suspense } from 'react'
 
-export default function ProductsPage() {
+function ProductsContent() {
     const searchParams = useSearchParams()
     const categoryParam = searchParams.get('category')
     const searchParam = searchParams.get('search') // Get search query
@@ -49,11 +39,8 @@ export default function ProductsPage() {
     const fetchProducts = async (category: string) => {
         setLoading(true)
         try {
-            const url = category === 'all'
-                ? 'http://localhost:8000/api/products'
-                : `http://localhost:8000/api/products?category=${category}`
-            const response = await axios.get(url)
-            setProducts(response.data)
+            const data = await productService.getAllProducts(category)
+            setProducts(data)
         } catch (error) {
             console.error('Error fetching products:', error)
         } finally {
@@ -140,5 +127,17 @@ export default function ProductsPage() {
                 </div>
             </div>
         </div>
+    )
+}
+
+export default function ProductsPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+            </div>
+        }>
+            <ProductsContent />
+        </Suspense>
     )
 }

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Mail, Phone, MapPin, Send } from 'lucide-react'
-import axios from 'axios'
+import { contactService } from '@/services/contactService'
 
 export default function ContactPage() {
     const [formData, setFormData] = useState({
@@ -17,7 +17,10 @@ export default function ContactPage() {
         setStatus('loading')
 
         try {
-            await axios.post('http://localhost:8000/api/contact', formData)
+            await contactService.sendMessage({
+                ...formData,
+                subject: `Contact Form Submission from ${formData.name}`
+            })
             setStatus('success')
             setFormData({ name: '', email: '', message: '' })
             setTimeout(() => setStatus('idle'), 5000)
@@ -26,6 +29,7 @@ export default function ContactPage() {
             setTimeout(() => setStatus('idle'), 5000)
         }
     }
+
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         setFormData({

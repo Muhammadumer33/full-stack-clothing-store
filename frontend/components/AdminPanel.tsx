@@ -1,17 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Trash2, Edit, Plus, Save, X, LogOut, Package, ShoppingBag, CheckCircle, Calendar, TrendingUp, BarChart3, Clock } from 'lucide-react';
-
-interface Product {
-    id: number;
-    name: string;
-    description: string;
-    price: number;
-    category: string;
-    image: string;
-    sizes: string[];
-    colors: string[];
-    inStock: boolean;
-}
+import { adminService, AdminStats } from '@/services/adminService';
+import { orderService, OrderData } from '@/services/orderService';
+import { Product } from '@/services/productService';
 
 interface Order {
     id: number;
@@ -55,8 +46,6 @@ export default function AdminPanel() {
     const ADMIN_USERNAME = 'admin';
     const ADMIN_PASSWORD = 'rj123';
 
-    const API_BASE = 'http://localhost:8000/api';
-
     useEffect(() => {
         if (isLoggedIn) {
             fetchProducts();
@@ -67,8 +56,7 @@ export default function AdminPanel() {
 
     const fetchStats = async () => {
         try {
-            const response = await fetch(`${API_BASE}/admin/stats`);
-            const data = await response.json();
+            const data = await adminService.getStats();
             setStats(data);
         } catch (error) {
             console.error('Failed to fetch stats:', error);
@@ -77,7 +65,11 @@ export default function AdminPanel() {
 
     const fetchProducts = async () => {
         try {
-            const response = await fetch(`${API_BASE}/products`);
+            // Re-using common logic or admin specific product fetch if needed
+            // For now, using direct fetch but via adminService if we had specialized admin-read
+            // Actually, adminService.addProduct and others exist, so let's use a generic fetch through api if needed
+            // But let's keep it simple and use what we have
+            const response = await fetch('http://localhost:8000/api/products');
             const data = await response.json();
             setProducts(data);
         } catch (error) {
@@ -87,8 +79,7 @@ export default function AdminPanel() {
 
     const fetchOrders = async () => {
         try {
-            const response = await fetch(`${API_BASE}/orders`);
-            const data = await response.json();
+            const data = await orderService.getOrders();
             setOrders(data);
         } catch (error) {
             setError('Failed to fetch orders');
@@ -125,12 +116,6 @@ export default function AdminPanel() {
         if (!editingProduct) return;
 
         try {
-            const url = showAddForm
-                ? `${API_BASE}/products`
-                : `${API_BASE}/products/${editingProduct.id}`;
-
-            const method = showAddForm ? 'POST' : 'PUT';
-
             const price = parseFloat(editingProduct.price.toString());
             if (isNaN(price)) {
                 throw new Error("Price must be a valid number");
@@ -147,27 +132,13 @@ export default function AdminPanel() {
                 inStock: editingProduct.inStock,
             };
 
-            console.log("Sending payload:", payload);
-
-            const response = await fetch(url, {
-                method,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({ detail: response.statusText }));
-                console.error("Backend error response:", errorData);
-                // Handle Pydantic validation errors (array of errors)
-                if (Array.isArray(errorData.detail)) {
-                    const messages = errorData.detail.map((err: any) => `${err.loc.join('.')} ${err.msg}`).join(', ');
-                    throw new Error(messages);
-                }
-                throw new Error(errorData.detail || `Request failed with status ${response.status}`);
+            if (showAddForm) {
+                const data = await adminService.addProduct(payload);
+                console.log("Add success:", data);
+            } else {
+                const data = await adminService.updateProduct(editingProduct.id, payload);
+                console.log("Update success:", data);
             }
-
-            const data = await response.json();
-            console.log("Save success:", data);
 
             setEditingProduct(null);
             setShowAddForm(false);
@@ -209,9 +180,7 @@ export default function AdminPanel() {
     const confirmDeleteProduct = async () => {
         if (productToDelete) {
             try {
-                await fetch(`${API_BASE}/products/${productToDelete}`, {
-                    method: 'DELETE',
-                });
+                await adminService.deleteProduct(productToDelete);
                 fetchProducts();
                 setShowProductDeleteConfirm(false);
                 setProductToDelete(null);
@@ -232,13 +201,10 @@ export default function AdminPanel() {
     const confirmDeleteOrder = async () => {
         if (orderToDelete) {
             try {
-                await fetch(`${API_BASE}/orders/${orderToDelete}`, {
-                    method: 'DELETE',
-                });
+                await orderService.deleteOrder(orderToDelete);
                 fetchOrders();
                 setShowDeleteConfirm(false);
                 setOrderToDelete(null);
-                setShowDeleteConfirm(false);
                 setOrderToDelete(null);
                 setDeleteSuccessMessage('Order Deleted');
                 setShowDeleteSuccess(true);
@@ -251,11 +217,7 @@ export default function AdminPanel() {
 
     const handleUpdateStatus = async (id: number, newStatus: string) => {
         try {
-            await fetch(`${API_BASE}/orders/${id}/status`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: newStatus }),
-            });
+            await orderService.updateOrderStatus(id, newStatus);
             fetchOrders();
             fetchStats();
         } catch (error) {
