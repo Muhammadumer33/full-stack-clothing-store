@@ -18,7 +18,18 @@ load_dotenv()
 
 app = FastAPI(title="Raja's Collection API")
 
-DATABASE_URL = os.environ["DATABASE_URL"]
+# Get database URL from environment
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+if not DATABASE_URL:
+    print("WARNING: DATABASE_URL environment variable is not set!")
+    # For Vercel, we can't really proceed without a DB, but we shouldn't crash on import
+    # if possible, though SQLAlchemy will fail later.
+    DATABASE_URL = "sqlite:///./test.db" # Fallback to local sqlite for safety during builds
+else:
+    # SQL Alchemy 1.4+ requires 'postgresql://' instead of 'postgres://'
+    if DATABASE_URL.startswith("postgres://"):
+        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
