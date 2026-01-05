@@ -63,7 +63,11 @@ Base.metadata.create_all(bind=engine)
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173"],  # Vite/React port
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "https://full-stack-clothing-store-icz7.vercel.app"
+    ],  # Vite/React port and live URL
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

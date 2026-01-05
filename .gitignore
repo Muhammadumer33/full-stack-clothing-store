@@ -17,6 +17,7 @@ backend/venv/
 backend/.env
 backend/db.sqlite3
 backend/migrate_orders.py
+backend/verify_cors.py
 
 # Agent
 .gemini/
